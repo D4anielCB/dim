@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIM Wishlist Enhancer</title>
+    <!-- Inclui o framework de CSS Tailwind para um design moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inclui a fonte Inter para uma melhor legibilidade -->
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        /* Estilo para o indicador de carregamento (loader) */
+        .loader {
+            border-top-color: #3b82f6; /* Cor azul do Tailwind */
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Garante que a área de código preserve espaços e quebras de linha */
+        pre code {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div class="w-full max-w-7xl bg-gray-800 rounded-lg shadow-2xl p-6 md:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">Otimizador de Wishlist do DIM</h1>
+            <p class="text-gray-400 mt-2">Cole suas linhas de wishlist para adicionar nomes de perks e itens automaticamente.</p>
+        </div>
+
+        <!-- Layout agora com 3 colunas em telas grandes -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            <!-- Coluna de Entrada -->
+            <div>
+                <label for="wishlist-input" class="block text-sm font-medium text-gray-300 mb-2">Entrada da Wishlist:</label>
+                <textarea id="wishlist-input" rows="15" class="w-full h-[356px] bg-gray-900 border border-gray-700 rounded-md p-3 text-sm text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300" placeholder="Cole suas linhas aqui...&#10;dimwishlist:item=...&perks=...&#10;dimwishlist:item=...&perks=..."></textarea>
+                <button id="process-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-md transition-transform duration-300 ease-in-out flex items-center justify-center shadow-lg hover:scale-105">
+                    <span id="btn-text">Processar Wishlist</span>
+                    <div id="loader" class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-5 w-5 ml-3 hidden"></div>
+                </button>
+            </div>
+
+            <!-- Coluna de Saída -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-sm font-medium text-gray-300">Saída Formatada:</label>
+                    <button id="copy-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-1 px-3 rounded-md text-xs transition-colors duration-300">
+                        Copiar
+                    </button>
+                </div>
+                <div class="w-full h-[356px] bg-gray-900 border border-gray-700 rounded-md p-3 overflow-y-auto">
+                    <pre><code id="wishlist-output" class="text-sm text-gray-300"></code></pre>
+                </div>
+                 <div id="message-box" class="mt-4 h-5 text-center text-sm text-green-400 font-medium"></div>
+            </div>
+            
+            <!-- NOVA COLUNA: Perks Únicos -->
+            <div>
+                 <label class="block text-sm font-medium text-gray-300 mb-2">Perks Únicos Encontrados:</label>
+                 <div class="w-full h-[356px] bg-gray-900 border border-gray-700 rounded-md p-3 overflow-y-auto">
+                    <ul id="unique-perks-list">
+                        <!-- A lista de perks será inserida aqui via JavaScript -->
+                    </ul>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const processBtn = document.getElementById('process-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const inputArea = document.getElementById('wishlist-input');
+            const outputArea = document.getElementById('wishlist-output');
+            const uniquePerksList = document.getElementById('unique-perks-list'); // Novo elemento da lista
+            const loader = document.getElementById('loader');
+            const btnText = document.getElementById('btn-text');
+            const messageBox = document.getElementById('message-box');
+
+            const nameCache = new Map();
+
+            async function fetchName(id) {
+                if (!id) return "ID Inválido";
+                if (nameCache.has(id)) return nameCache.get(id);
+
+                const targetUrl = `https://www.light.gg/db/items/${id}`;
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+                try {
+                    const response = await fetch(proxyUrl);
+                    if (!response.ok) throw new Error(`Erro na rede: ${response.status} para o ID ${id}`);
+                    const html = await response.text();
+                    const titleMatch = html.match(/<title>(.*?) - .*<\/title>/i);
+                    let name = `Nome não encontrado (${id})`;
+                    if (titleMatch && titleMatch[1]) {
+                        name = titleMatch[1].replace(/ - Destiny 2.*/i, '').trim();
+                    }
+                    nameCache.set(id, name);
+                    return name;
+                } catch (error) {
+                    console.error(`Falha ao buscar ID ${id}:`, error);
+                    const errorMsg = `Erro ao buscar (${id})`;
+                    nameCache.set(id, errorMsg);
+                    return errorMsg;
+                }
+            }
+
+            processBtn.addEventListener('click', async () => {
+                const inputText = inputArea.value;
+                if (!inputText.trim()) {
+                    outputArea.textContent = 'Por favor, insira uma wishlist para processar.';
+                    return;
+                }
+
+                loader.classList.remove('hidden');
+                btnText.textContent = 'Processando...';
+                processBtn.disabled = true;
+                outputArea.textContent = 'Coletando IDs únicos...';
+                uniquePerksList.innerHTML = ''; // Limpa a lista de perks anterior
+                messageBox.textContent = '';
+
+                const lines = inputText.split('\n');
+                const allUniqueIds = new Set();
+                const uniquePerkIds = new Set(); // Set específico para perks
+
+                lines.forEach(line => {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('dimwishlist:item=')) {
+                        const params = new URLSearchParams(trimmedLine.substring(trimmedLine.indexOf(':') + 1));
+                        const itemId = params.get('item');
+                        const perksStr = params.get('perks');
+                        if (itemId) allUniqueIds.add(itemId);
+                        if (perksStr) {
+                            perksStr.split(',').filter(p => p).forEach(pId => {
+                                allUniqueIds.add(pId);
+                                uniquePerkIds.add(pId); // Adiciona na lista de perks também
+                            });
+                        }
+                    }
+                });
+                
+                outputArea.textContent = `Buscando ${allUniqueIds.size} nomes no light.gg...`;
+
+                const fetchPromises = Array.from(allUniqueIds).map(id => fetchName(id));
+                await Promise.all(fetchPromises);
+
+                outputArea.textContent = 'Montando a wishlist formatada...';
+
+                const processedLines = lines.map(line => {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine.startsWith('dimwishlist:item=')) return trimmedLine;
+                    
+                    const params = new URLSearchParams(trimmedLine.substring(trimmedLine.indexOf(':') + 1));
+                    const itemId = params.get('item');
+                    const perksStr = params.get('perks');
+
+                    if (!itemId || !perksStr) return `// Linha mal formatada: ${trimmedLine}`;
+
+                    const itemName = nameCache.get(itemId) || `Nome não encontrado (${itemId})`;
+                    const perkNames = perksStr.split(',').filter(p => p).map(pId => nameCache.get(pId) || `Nome não encontrado (${pId})`);
+                    
+                    return `//item: ${itemId} (${itemName})\n//notes: ${perkNames.join(', ')}\n${trimmedLine}`;
+                }).join('\n\n');
+                
+                outputArea.textContent = processedLines;
+
+                // Preenche a nova lista de perks únicos
+                const sortedPerkIds = Array.from(uniquePerkIds).sort((a, b) => 
+                    (nameCache.get(a) || '').localeCompare(nameCache.get(b) || '')
+                );
+                
+                sortedPerkIds.forEach(perkId => {
+                    const perkName = nameCache.get(perkId);
+                    if (perkName && !perkName.startsWith('Erro')) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = perkName;
+                        listItem.className = 'text-sm text-gray-300 py-1 border-b border-gray-800';
+                        uniquePerksList.appendChild(listItem);
+                    }
+                });
+
+                loader.classList.add('hidden');
+                btnText.textContent = 'Processar Wishlist';
+                processBtn.disabled = false;
+            });
+
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = outputArea.textContent;
+                if (textToCopy) {
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        messageBox.textContent = 'Copiado para a área de transferência!';
+                        setTimeout(() => messageBox.textContent = '', 2000);
+                    }).catch(err => {
+                        messageBox.textContent = 'Falha ao copiar!';
+                        console.error('Erro ao copiar texto: ', err);
+                    });
+                } else {
+                    messageBox.textContent = 'Nada para copiar.';
+                     setTimeout(() => messageBox.textContent = '', 2000);
+                }
+            });
+            
+            inputArea.value = `dimwishlist:item=1801007332&perks=1087426260,1820235745,4090651448,4293542123
+dimwishlist:item=1801007332&perks=1087426260,1820235745,4090651448,4104185692
+dimwishlist:item=1801007332&perks=1087426260,1820235745,2298656195,4090651448
+dimwishlist:item=1801007332&perks=106909392,1820235745,4090651448,4293542123
+dimwishlist:item=1801007332&perks=106909392,4090651448,4293542123,880644845
+dimwishlist:item=1801007332&perks=1820235745,3230963543,4090651448,4293542123
+dimwishlist:item=1801007332&perks=1087426260,1482024992,1820235745,4293542123
+dimwishlist:item=1801007332&perks=106909392,1482024992,1820235745,4104185692`;
+        });
+    </script>
+
+</body>
+</html>
