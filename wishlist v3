@@ -1,8 +1,38 @@
-title:Ricks WS3
-description:Rick
+title:Festival of the Lost 2025 Rolls - Rick
+description:Recomendações de God Rolls para as armas do evento de Halloween (Festival of the Lost) de 2025.
 
 // Mint Retrograde (PvE)
 //notes: S tier, tags:pve
 dimwishlist:item=42435996&perks=3418782618,2396489472 // Rewind Rounds + Chain Reaction
 dimwishlist:item=42435996&perks=3418782618,3081867624 // Rewind Rounds + Master of Arms
 dimwishlist:item=42435996&perks=831391274,2396489472 // Hatchling + Chain Reaction
+
+// Arcane Embrace (PVE - Boss DPS)
+//notes: PVE God Roll (DPS) - Quarto Tempo é o Melhor + Instrumento de Precisão ou Carga Agregada.
+dimwishlist:item=3328019216&perks=1840239774,106909392,1354429876,3764420437
+dimwishlist:item=3328019216&perks=1840239774,106909392,1354429876,555281244
+
+// Arcane Embrace (PVP)
+//notes: PVP Roll - Lobo Solitário é a melhor opção na coluna 3.
+dimwishlist:item=3328019216&perks=1482024992,3142289711,2579169598,2848615171
+dimwishlist:item=3328019216&perks=1482024992,3142289711,2579169598,3708227201
+
+// Hushed Whisper (PVE - Strand)
+//notes: PVE God Roll - Tear para utilidade de Strand. Cabeça Explosiva para dano geral ou Cria para sinergia.
+dimwishlist:item=3574168117&perks=960997401,3365897133
+dimwishlist:item=3574168117&perks=960997401,831391274
+
+// Hushed Whisper (PVP)
+//notes: PVP God Roll - Combo clássico de Lobo Solitário + Gambito do Arqueiro para um segundo tiro rápido.
+dimwishlist:item=3574168117&perks=2579169598,3414324643
+
+// Gunburn (PVE - Ad Clear)
+//notes: PVE God Roll (Ad Clear) - Boas opções de utilidade. Tremores Cinéticos ou Orbes de Atrito são ótimos.
+dimwishlist:item=3431536253&perks=1570399071,1549370717
+dimwishlist:item=3431536253&perks=1570399071,243981275
+dimwishlist:item=3431536253&perks=2289534249,1549370717
+dimwishlist:item=3431536253&perks=2289534249,243981275
+
+// Gunburn (PVP)
+//notes: PVP God Roll - Lobo Solitário para bônus passivo e Mira Fixa para melhorar o TTK.
+dimwishlist:item=3431536253&perks=2579169598,365154968
